@@ -18,7 +18,11 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 app.MapOpenApi(); // OpenAPI document at /openapi/v1.json
-app.MapGet("/", () => Results.Redirect("/openapi/v1.json"));
+
+// Serve the thin demo page (wwwroot/index.html) at "/".
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok", provider = coreOptions.Provider.ToString() }));
 
 // POST /ask — natural-language question -> validated, read-only SQL -> result rows.

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Data Analyst — demo</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, "Segoe UI", Roboto, sans-serif; max-width: 920px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    h1 { margin-bottom: .25rem; }
+    .sub { color: #777; margin-top: 0; }
+    .row { display: flex; gap: .5rem; margin: 1rem 0; }
+    input[type=text] { flex: 1; padding: .6rem .7rem; font-size: 1rem; border: 1px solid #8884; border-radius: 8px; }
+    button { padding: .6rem 1rem; font-size: 1rem; border: 0; border-radius: 8px; background: #2d6cdf; color: #fff; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: default; }
+    .examples { font-size: .85rem; color: #777; }
+    .examples a { cursor: pointer; color: #2d6cdf; margin-right: .8rem; text-decoration: underline; }
+    label.chk { font-size: .9rem; color: #555; display: inline-flex; align-items: center; gap: .3rem; }
+    pre { background: #8881; padding: .8rem; border-radius: 8px; overflow-x: auto; font-size: .85rem; }
+    table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+    th, td { border: 1px solid #8884; padding: .35rem .55rem; text-align: left; }
+    th { background: #8881; }
+    .summary { background: #2d6cdf18; border-left: 4px solid #2d6cdf; padding: .6rem .8rem; border-radius: 6px; }
+    .refused { background: #df2d2d18; border-left: 4px solid #df2d2d; padding: .6rem .8rem; border-radius: 6px; }
+    .meta { color: #777; font-size: .8rem; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>AI Data Analyst</h1>
+  <p class="sub">Ask a business question (English or Vietnamese). It becomes safe, read-only SQL — validated, then run. <a href="/openapi/v1.json">OpenAPI</a></p>
+
+  <div class="row">
+    <input id="q" type="text" placeholder="e.g. Top 5 best-selling products by quantity" />
+    <button id="ask">Ask</button>
+  </div>
+  <div class="row" style="margin-top:-.5rem; align-items:center; justify-content:space-between;">
+    <span class="examples">
+      Try:
+      <a data-q="Top 5 best-selling products by quantity">top products</a>
+      <a data-q="Revenue by payment method">payment split</a>
+      <a data-q="Doanh thu theo thành phố trong năm 2025">doanh thu theo thành phố</a>
+    </span>
+    <label class="chk"><input id="sum" type="checkbox" checked /> include summary</label>
+  </div>
+
+  <div id="out"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const out = $('out');
+
+    async function ask(question) {
+      out.innerHTML = '<p class="meta">Running…</p>';
+      $('ask').disabled = true;
+      try {
+        const res = await fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, includeSummary: $('sum').checked })
+        });
+        render(await res.json());
+      } catch (e) {
+        out.innerHTML = '<p class="refused">Request failed: ' + e + '</p>';
+      } finally {
+        $('ask').disabled = false;
+      }
+    }
+
+    function esc(s) { return String(s ?? '').replace(/[&<>]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c])); }
+
+    function render(r) {
+      if (r.status === 'Refused') {
+        out.innerHTML = '<div class="refused"><strong>Refused.</strong><ul>' +
+          (r.refusalReasons || []).map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' +
+          (r.generatedSql ? '<h3>Model SQL (not executed)</h3><pre>' + esc(r.generatedSql) + '</pre>' : '');
+        return;
+      }
+      let html = '';
+      if (r.summary) html += '<p class="summary">' + esc(r.summary) + '</p>';
+      html += '<h3>Result <span class="meta">(' + r.rowCount + ' rows, ' + r.executionMs + ' ms' + (r.truncated ? ', capped' : '') + ')</span></h3>';
+      html += '<table><thead><tr>' + r.columns.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead><tbody>' +
+        r.rows.map(row => '<tr>' + row.map(v => '<td>' + esc(v) + '</td>').join('') + '</tr>').join('') +
+        '</tbody></table>';
+      html += '<h3>Executed SQL <span class="meta">(validated, read-only, row-capped)</span></h3><pre>' + esc(r.executedSql) + '</pre>';
+      out.innerHTML = html;
+    }
+
+    $('ask').onclick = () => { const q = $('q').value.trim(); if (q) ask(q); };
+    $('q').addEventListener('keydown', e => { if (e.key === 'Enter') $('ask').click(); });
+    document.querySelectorAll('.examples a').forEach(a =>
+      a.onclick = () => { $('q').value = a.dataset.q; ask(a.dataset.q); });
+  </script>
+</body>
+</html>
