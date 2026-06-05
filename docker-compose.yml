@@ -48,5 +48,23 @@ services:
         $$S -S mssql -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /db/03_readonly_role.sql
         echo 'DB init complete.'
 
+  # The API itself, containerized. Waits for the DB to be seeded, then serves on :8080.
+  # Offline provider by default; for real answers set Analyst__Provider + the provider keys.
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: analyst-api
+    depends_on:
+      mssql-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__Analyst: "Server=mssql,1433;Database=AnalystDB;User Id=analyst_ro;Password=Readonly#Analyst1;TrustServerCertificate=True;Encrypt=False"
+      Analyst__Provider: "Offline"
+      Analyst__SchemaConfigPath: "config/schema.fnb.json"
+    ports:
+      - "8080:8080"
+
 volumes:
   mssql-data:

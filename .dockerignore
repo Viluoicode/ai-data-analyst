@@ -1,0 +1,16 @@
+# Keep the build context small and avoid copying build artifacts/secrets.
+**/bin
+**/obj
+.git
+.github
+.claude
+.vs
+.vscode
+*.user
+tests
+samples
+eval
+README.md
+**/appsettings.*.Local.json
+**/*.secret.json
+.env

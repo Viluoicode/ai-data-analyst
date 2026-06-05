@@ -3,6 +3,11 @@ using Analyst.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Many cloud hosts (Render, Railway, Fly, …) inject the listen port via $PORT.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 // Bind the Analyst section (provider, schema path, credentials) and register the Core pipeline.
 var coreOptions = new AnalystCoreOptions();
 builder.Configuration.GetSection("Analyst").Bind(coreOptions);
