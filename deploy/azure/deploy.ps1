@@ -19,8 +19,15 @@ $DB        = "AnalystDB"
 $APP       = "ai-data-analyst"
 $ROPASS    = "Readonly#Analyst1"            # read-only app user pwd (must match 03_role.sql)
 
-# OpenAI key — set it in your shell, do NOT hardcode it here:
-#   $env:OPENAI_KEY = "sk-...."
+# LLM provider (OpenAI-compatible). Defaults to Groq's FREE API (no credit card).
+#   Groq    : BaseUrl https://api.groq.com/openai/v1   Model llama-3.3-70b-versatile
+#   Gemini  : BaseUrl https://generativelanguage.googleapis.com/v1beta/openai/  Model gemini-2.0-flash
+#   OpenAI  : BaseUrl ""  (leave empty)                 Model gpt-4o-mini   (needs paid credit)
+$LLM_BASEURL = "https://api.groq.com/openai/v1"
+$LLM_MODEL   = "llama-3.3-70b-versatile"
+
+# API key — set it in your shell, do NOT hardcode it here:
+#   $env:OPENAI_KEY = "<your provider key>"
 if (-not $env:OPENAI_KEY) { Write-Warning "Set `$env:OPENAI_KEY before the container deploy step." }
 
 # ---- 2. Resource group + Azure SQL -----------------------------------------
@@ -68,7 +75,8 @@ az containerapp up `
   --env-vars `
      "ConnectionStrings__Analyst=$conn" `
      "Analyst__Provider=OpenAI" `
-     "Analyst__OpenAI__Model=gpt-4o-mini" `
+     "Analyst__OpenAI__BaseUrl=$LLM_BASEURL" `
+     "Analyst__OpenAI__Model=$LLM_MODEL" `
      "Analyst__OpenAI__ApiKey=$env:OPENAI_KEY"
 
 # ---- 5. Show the public URL -------------------------------------------------

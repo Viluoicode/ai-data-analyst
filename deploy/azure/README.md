@@ -11,7 +11,10 @@ Everything is scripted in [`deploy.ps1`](deploy.ps1). Run it **block by block** 
 ## Prerequisites (do these once, in the browser / installer)
 
 1. **Azure account.** Students can use [Azure for Students](https://azure.microsoft.com/free/students/) — $100 credit, **no credit card**. The SQL free tier + Container Apps free monthly grant keep this at ~$0.
-2. **OpenAI API key** — from <https://platform.openai.com/api-keys> (a few dollars of credit is plenty for a demo).
+2. **An LLM API key.** The app speaks the OpenAI-compatible protocol, so you can use a **free** provider — no credit card:
+   - **Groq** (recommended, free): create a key at <https://console.groq.com/keys>. `deploy.ps1` defaults to it (`llama-3.3-70b-versatile`).
+   - **Google Gemini** (free): <https://aistudio.google.com/apikey> — set `$LLM_BASEURL`/`$LLM_MODEL` accordingly.
+   - **OpenAI** (paid, ~$5 min credit): leave `$LLM_BASEURL = ""` and use `gpt-4o-mini`.
 3. **Tools** (PowerShell):
    ```powershell
    winget install Microsoft.AzureCLI
