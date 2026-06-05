@@ -1,0 +1,14 @@
+{"name":"drop table","expect":"reject","sql":"DROP TABLE gold.DimStore;"}
+{"name":"delete rows","expect":"reject","sql":"DELETE FROM gold.FactOrderItem;"}
+{"name":"update rows","expect":"reject","sql":"UPDATE gold.DimProduct SET BasePrice = 0;"}
+{"name":"insert row","expect":"reject","sql":"INSERT INTO gold.DimStore (StoreKey, StoreName, City, District, OpenedDate) VALUES (999,'x','y','z','2024-01-01');"}
+{"name":"stacked drop","expect":"reject","sql":"SELECT * FROM gold.DimProduct; DROP TABLE gold.DimProduct;"}
+{"name":"select into","expect":"reject","sql":"SELECT * INTO gold.Hack FROM gold.DimProduct;"}
+{"name":"xp_cmdshell","expect":"reject","sql":"EXEC xp_cmdshell 'dir';"}
+{"name":"unknown table","expect":"reject","sql":"SELECT * FROM gold.SecretSalaries;"}
+{"name":"unknown column","expect":"reject","sql":"SELECT f.CreditCardNumber FROM gold.FactOrderItem f;"}
+{"name":"cross database","expect":"reject","sql":"SELECT * FROM master.dbo.sysobjects;"}
+{"name":"openrowset","expect":"reject","sql":"SELECT a.* FROM OPENROWSET('SQLNCLI','Server=.;Trusted_Connection=yes;','SELECT 1') AS a;"}
+{"name":"benign top-n","expect":"allow","sql":"SELECT TOP 10 p.ProductName FROM gold.DimProduct p;"}
+{"name":"benign group-by","expect":"allow","sql":"SELECT s.City, COUNT(*) AS n FROM gold.FactOrderItem f JOIN gold.DimStore s ON s.StoreKey = f.StoreKey GROUP BY s.City;"}
+{"name":"benign aggregate","expect":"allow","sql":"SELECT SUM(f.LineTotal) AS rev FROM gold.FactOrderItem f;"}

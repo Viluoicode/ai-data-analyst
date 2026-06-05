@@ -4,6 +4,24 @@
     <ProjectReference Include="..\..\src\Analyst.Core\Analyst.Core.csproj" />
   </ItemGroup>
 
+  <!-- Schema whitelist + golden/safety sets, copied next to the eval runner. -->
+  <ItemGroup>
+    <Content Include="..\..\config\schema.fnb.json" Link="config\schema.fnb.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\eval\questions.jsonl" Link="eval\questions.jsonl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\eval\safety.jsonl" Link="eval\safety.jsonl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.8" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
