@@ -1,0 +1,103 @@
+{
+  "name": "fnb-gold",
+  "description": "Gold-layer star schema for a milk-tea (F&B) shop chain. One fact table of order line items plus date, store, product and customer dimensions. All monetary values are in Vietnamese Dong (VND). Data covers 2024-01-01 through 2025-12-31.",
+  "databaseName": "AnalystDB",
+  "defaultSchema": "gold",
+  "dialect": "TSql",
+  "maxRows": 1000,
+  "queryTimeoutSeconds": 30,
+  "tables": [
+    {
+      "schema": "gold",
+      "name": "FactOrderItem",
+      "grain": "One row per product line within an order. Sum LineTotal for revenue.",
+      "columns": [
+        { "name": "OrderItemKey",   "type": "bigint",        "description": "Surrogate primary key of the line item." },
+        { "name": "OrderId",        "type": "int",           "description": "Business order id. Multiple line items can share one OrderId. Count DISTINCT OrderId for number of orders." },
+        { "name": "DateKey",        "type": "int",           "description": "Foreign key to DimDate.DateKey, format YYYYMMDD." },
+        { "name": "StoreKey",       "type": "int",           "description": "Foreign key to DimStore.StoreKey." },
+        { "name": "ProductKey",     "type": "int",           "description": "Foreign key to DimProduct.ProductKey." },
+        { "name": "CustomerKey",    "type": "int",           "description": "Foreign key to DimCustomer.CustomerKey." },
+        { "name": "Quantity",       "type": "int",           "description": "Number of units sold on this line." },
+        { "name": "UnitPrice",      "type": "decimal(10,2)", "description": "Price per unit in VND at time of sale." },
+        { "name": "DiscountAmount", "type": "decimal(12,2)", "description": "Discount applied to this line in VND." },
+        { "name": "LineTotal",      "type": "decimal(12,2)", "description": "Net revenue for this line in VND = UnitPrice * Quantity - DiscountAmount." },
+        { "name": "PaymentMethod",  "type": "varchar(20)",   "description": "Payment method: 'Cash', 'Card', or 'EWallet'." }
+      ]
+    },
+    {
+      "schema": "gold",
+      "name": "DimDate",
+      "grain": "One row per calendar day.",
+      "columns": [
+        { "name": "DateKey",      "type": "int",         "description": "Primary key, format YYYYMMDD." },
+        { "name": "FullDate",     "type": "date",        "description": "The calendar date." },
+        { "name": "Year",         "type": "smallint",    "description": "Calendar year, e.g. 2024." },
+        { "name": "Quarter",      "type": "tinyint",     "description": "Calendar quarter 1-4." },
+        { "name": "MonthNum",     "type": "tinyint",     "description": "Month number 1-12." },
+        { "name": "MonthName",    "type": "varchar(20)", "description": "Month name in English, e.g. 'January'." },
+        { "name": "DayNum",       "type": "tinyint",     "description": "Day of month 1-31." },
+        { "name": "DayOfWeekNum", "type": "tinyint",     "description": "Day of week, 1=Monday .. 7=Sunday." },
+        { "name": "DayName",      "type": "varchar(20)", "description": "Weekday name in English, e.g. 'Monday'." },
+        { "name": "IsWeekend",    "type": "bit",         "description": "1 if Saturday or Sunday, else 0." }
+      ]
+    },
+    {
+      "schema": "gold",
+      "name": "DimStore",
+      "grain": "One row per store.",
+      "columns": [
+        { "name": "StoreKey",   "type": "int",          "description": "Primary key." },
+        { "name": "StoreName",  "type": "nvarchar(100)","description": "Store name." },
+        { "name": "City",       "type": "nvarchar(60)", "description": "City, e.g. 'Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng'." },
+        { "name": "District",   "type": "nvarchar(60)", "description": "District within the city." },
+        { "name": "OpenedDate", "type": "date",         "description": "Date the store opened." }
+      ]
+    },
+    {
+      "schema": "gold",
+      "name": "DimProduct",
+      "grain": "One row per sellable product/size.",
+      "columns": [
+        { "name": "ProductKey",  "type": "int",          "description": "Primary key." },
+        { "name": "ProductName", "type": "nvarchar(100)","description": "Product name, e.g. 'Brown Sugar Boba'." },
+        { "name": "Category",    "type": "nvarchar(40)", "description": "Category: 'Milk Tea', 'Fruit Tea', 'Coffee', 'Smoothie', or 'Topping'." },
+        { "name": "Size",        "type": "varchar(10)",  "description": "Cup size 'S','M','L', or 'NA' for toppings." },
+        { "name": "BasePrice",   "type": "decimal(10,2)","description": "List price in VND." }
+      ]
+    },
+    {
+      "schema": "gold",
+      "name": "DimCustomer",
+      "grain": "One row per customer.",
+      "columns": [
+        { "name": "CustomerKey",    "type": "int",          "description": "Primary key." },
+        { "name": "CustomerName",   "type": "nvarchar(100)","description": "Customer display name." },
+        { "name": "Gender",         "type": "varchar(10)",  "description": "'Male' or 'Female'." },
+        { "name": "MembershipTier", "type": "varchar(10)",  "description": "Loyalty tier: 'Bronze', 'Silver', or 'Gold'." },
+        { "name": "City",           "type": "nvarchar(60)", "description": "Customer's city." },
+        { "name": "JoinedDate",     "type": "date",         "description": "Date the customer joined the loyalty program." }
+      ]
+    }
+  ],
+  "relationships": [
+    { "from": "gold.FactOrderItem.DateKey",     "to": "gold.DimDate.DateKey" },
+    { "from": "gold.FactOrderItem.StoreKey",    "to": "gold.DimStore.StoreKey" },
+    { "from": "gold.FactOrderItem.ProductKey",  "to": "gold.DimProduct.ProductKey" },
+    { "from": "gold.FactOrderItem.CustomerKey", "to": "gold.DimCustomer.CustomerKey" }
+  ],
+  "fewShot": [
+    {
+      "question": "What was total revenue in 2024?",
+      "sql": "SELECT TOP 1000 SUM(f.LineTotal) AS TotalRevenue FROM gold.FactOrderItem AS f JOIN gold.DimDate AS d ON d.DateKey = f.DateKey WHERE d.[Year] = 2024;"
+    },
+    {
+      "question": "Top 5 best-selling products by quantity",
+      "sql": "SELECT TOP 5 p.ProductName, SUM(f.Quantity) AS UnitsSold FROM gold.FactOrderItem AS f JOIN gold.DimProduct AS p ON p.ProductKey = f.ProductKey GROUP BY p.ProductName ORDER BY UnitsSold DESC;"
+    },
+    {
+      "question": "Doanh thu theo thành phố trong năm 2025",
+      "sql": "SELECT TOP 1000 s.City, SUM(f.LineTotal) AS Revenue FROM gold.FactOrderItem AS f JOIN gold.DimStore AS s ON s.StoreKey = f.StoreKey JOIN gold.DimDate AS d ON d.DateKey = f.DateKey WHERE d.[Year] = 2025 GROUP BY s.City ORDER BY Revenue DESC;"
+    }
+  ]
+}

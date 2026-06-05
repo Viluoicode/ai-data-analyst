@@ -1,0 +1,52 @@
+# SQL Server for the AI Data Analyst demo.
+#   - `mssql`      : the database engine (host port 11433 -> avoids clashing with a local 1433)
+#   - `mssql-init` : runs schema -> seed -> read-only role once the engine is healthy
+#
+# Usage:  docker compose up -d        (init runs automatically and then exits)
+#         docker compose logs mssql-init   (confirm "DB init complete.")
+#
+# Dev credentials only. Do not reuse these passwords anywhere real.
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: analyst-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Str0ng!Passw0rd"
+      MSSQL_PID: "Developer"
+    ports:
+      - "11433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q \"SELECT 1\" -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: analyst-mssql-init
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: "Str0ng!Passw0rd"
+    volumes:
+      - ./db:/db:ro
+    restart: "no"
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        S=/opt/mssql-tools18/bin/sqlcmd
+        $$S -S mssql -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /db/01_schema.sql
+        $$S -S mssql -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /db/02_seed.sql
+        $$S -S mssql -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /db/03_readonly_role.sql
+        echo 'DB init complete.'
+
+volumes:
+  mssql-data:

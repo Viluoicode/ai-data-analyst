@@ -1,0 +1,21 @@
+# .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+.vs/
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Secrets — never commit. Use dotnet user-secrets or environment variables.
+appsettings.*.Local.json
+*.secret.json
+.env
+
+# OS
+.DS_Store
+Thumbs.db

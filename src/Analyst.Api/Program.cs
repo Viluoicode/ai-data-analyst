@@ -1,0 +1,32 @@
+using Analyst.Core;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Bind the Analyst section (provider, schema path, credentials) and register the Core pipeline.
+var coreOptions = new AnalystCoreOptions();
+builder.Configuration.GetSection("Analyst").Bind(coreOptions);
+coreOptions.ConnectionString = builder.Configuration.GetConnectionString("Analyst") ?? coreOptions.ConnectionString;
+builder.Services.AddAnalystCore(coreOptions);
+
+builder.Services.AddOpenApi();
+
+var app = builder.Build();
+
+app.MapOpenApi(); // OpenAPI document at /openapi/v1.json
+app.MapGet("/", () => Results.Redirect("/openapi/v1.json"));
+app.MapGet("/health", () => Results.Ok(new { status = "ok", provider = coreOptions.Provider.ToString() }));
+
+// POST /ask — natural-language question -> validated, read-only SQL -> result rows.
+// Refused questions return 200 with status="Refused" and the reasons (the SQL never ran).
+app.MapPost("/ask", async (AskRequest req, AnalystService analyst, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(req.Question))
+        return Results.BadRequest(new { error = "Question is required." });
+
+    var result = await analyst.AskAsync(req.Question, ct);
+    return Results.Ok(result);
+});
+
+app.Run();
+
+public sealed record AskRequest(string Question, bool IncludeSummary = false);

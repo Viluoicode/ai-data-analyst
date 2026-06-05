@@ -1,0 +1,14 @@
+# Normalize line endings: let Git decide in the repo, check out native on each OS.
+* text=auto
+
+# Scripts that must stay LF even on Windows checkouts.
+*.sh text eol=lf
+
+# Treat these as text explicitly.
+*.cs    text
+*.csproj text
+*.slnx  text
+*.json  text
+*.sql   text
+*.yml   text
+*.md    text
