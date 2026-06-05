@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "analyst-api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Analyst.Api", "--no-launch-profile", "--", "--urls", "http://localhost:5184"],
+      "port": 5184
+    }
+  ]
+}
