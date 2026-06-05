@@ -9,7 +9,14 @@ public sealed record SqlGenerationResult(string Sql, string? Rationale, string R
     public bool IsEmpty => string.IsNullOrWhiteSpace(Sql);
 }
 
+/// <summary>
+/// Feedback for a single repair attempt: the rejected SQL and why the validator refused it.
+/// Passed back to the model so it can correct course (only used for real LLM providers).
+/// </summary>
+public sealed record GenerationContext(string PreviousSql, IReadOnlyList<string> Errors);
+
 public interface ITextToSqlGenerator
 {
-    Task<SqlGenerationResult> GenerateAsync(string question, CancellationToken cancellationToken = default);
+    Task<SqlGenerationResult> GenerateAsync(
+        string question, GenerationContext? repair = null, CancellationToken cancellationToken = default);
 }

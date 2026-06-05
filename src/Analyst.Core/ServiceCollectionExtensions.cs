@@ -23,8 +23,15 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITextToSqlGenerator, TextToSqlGenerator>();
         services.AddSingleton(BuildChatClient(options));
 
+        // Offline mode summarizes deterministically; a real provider uses the chat model.
+        if (options.Provider == LlmProvider.Offline)
+            services.AddSingleton<ISummarizer, TemplateSummarizer>();
+        else
+            services.AddSingleton<ISummarizer, LlmSummarizer>();
+
         services.AddSingleton<SqlValidator>();
-        services.AddSingleton(sp => new SqlExecutor(options.ConnectionString, sp.GetRequiredService<SchemaConfig>()));
+        services.AddSingleton<ISqlExecutor>(sp =>
+            new SqlExecutor(options.ConnectionString, sp.GetRequiredService<SchemaConfig>()));
         services.AddSingleton<AnalystService>();
 
         return services;

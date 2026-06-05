@@ -23,7 +23,8 @@ public sealed class PromptBuilder
     public string SystemPrompt => _systemPrompt.Value;
 
     /// <summary>System prompt + few-shot examples + the user's question as the final user turn.</summary>
-    public IList<ChatMessage> BuildMessages(string question)
+    /// <param name="repair">When set, appends the rejected SQL and validator errors so the model can fix it.</param>
+    public IList<ChatMessage> BuildMessages(string question, GenerationContext? repair = null)
     {
         var messages = new List<ChatMessage> { new(ChatRole.System, SystemPrompt) };
 
@@ -35,6 +36,18 @@ public sealed class PromptBuilder
         }
 
         messages.Add(new ChatMessage(ChatRole.User, question));
+
+        if (repair is not null)
+        {
+            messages.Add(new ChatMessage(ChatRole.Assistant,
+                JsonSerializer.Serialize(new { sql = repair.PreviousSql, rationale = "previous attempt" })));
+            messages.Add(new ChatMessage(ChatRole.User,
+                "That query was REJECTED by the SQL validator for these reasons:\n" +
+                string.Join("\n", repair.Errors.Select(e => $"  - {e}")) +
+                "\nFix the query so it obeys every hard rule (single SELECT, only allowed tables/columns, TOP limit). " +
+                "Respond again with the JSON object only."));
+        }
+
         return messages;
     }
 

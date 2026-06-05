@@ -22,9 +22,10 @@ public sealed class TextToSqlGenerator : ITextToSqlGenerator
         _logger = logger;
     }
 
-    public async Task<SqlGenerationResult> GenerateAsync(string question, CancellationToken cancellationToken = default)
+    public async Task<SqlGenerationResult> GenerateAsync(
+        string question, GenerationContext? repair = null, CancellationToken cancellationToken = default)
     {
-        var messages = _prompt.BuildMessages(question);
+        var messages = _prompt.BuildMessages(question, repair);
         var options = new ChatOptions
         {
             Temperature = 0f,

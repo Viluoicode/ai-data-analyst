@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Analyst.Core;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +8,10 @@ var coreOptions = new AnalystCoreOptions();
 builder.Configuration.GetSection("Analyst").Bind(coreOptions);
 coreOptions.ConnectionString = builder.Configuration.GetConnectionString("Analyst") ?? coreOptions.ConnectionString;
 builder.Services.AddAnalystCore(coreOptions);
+
+// Serialize enums as strings ("Answered"/"Refused") instead of integers.
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddOpenApi();
 
@@ -23,7 +28,7 @@ app.MapPost("/ask", async (AskRequest req, AnalystService analyst, CancellationT
     if (string.IsNullOrWhiteSpace(req.Question))
         return Results.BadRequest(new { error = "Question is required." });
 
-    var result = await analyst.AskAsync(req.Question, ct);
+    var result = await analyst.AskAsync(req.Question, req.IncludeSummary, ct);
     return Results.Ok(result);
 });
 

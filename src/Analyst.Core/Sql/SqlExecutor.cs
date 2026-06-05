@@ -10,7 +10,7 @@ namespace Analyst.Core.Sql;
 /// the TOP rewrite was skipped (e.g. for a UNION). The connection string itself uses the
 /// <c>analyst_ro</c> principal, which cannot write, so this layer cannot mutate data.
 /// </summary>
-public sealed class SqlExecutor
+public sealed class SqlExecutor : ISqlExecutor
 {
     private readonly string _connectionString;
     private readonly int _maxRows;

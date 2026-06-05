@@ -28,6 +28,9 @@ public sealed class AnalystResult
     public bool Truncated { get; init; }
     public long ExecutionMs { get; init; }
 
+    /// <summary>Optional natural-language summary of the rows (only when requested and Answered).</summary>
+    public string? Summary { get; init; }
+
     public string? Rationale { get; init; }
     public IReadOnlyList<string>? ReferencedTables { get; init; }
 
@@ -45,7 +48,8 @@ public sealed class AnalystResult
     };
 
     public static AnalystResult Answered(
-        string question, string generatedSql, SqlValidationResult validation, QueryResult result, string? rationale) => new()
+        string question, string generatedSql, SqlValidationResult validation, QueryResult result,
+        string? rationale, string? summary) => new()
     {
         Status = AnalystStatus.Answered,
         Question = question,
@@ -57,6 +61,7 @@ public sealed class AnalystResult
         Truncated = result.Truncated,
         ExecutionMs = result.ExecutionMs,
         ReferencedTables = validation.ReferencedTables,
-        Rationale = rationale
+        Rationale = rationale,
+        Summary = summary
     };
 }
