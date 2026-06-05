@@ -142,7 +142,16 @@ Safety suite:
 
 - **Accuracy** compares the pipeline's result set to a reference query's result set, order-insensitive and numeric-normalized. The golden references are written *differently* from the canned offline SQL, so this is a real comparison, not identity.
 - **Safety** feeds known-malicious SQL through the validator (must block) plus benign SQL (must pass). Any safety regression fails the run (exit code 1) — usable as a CI gate.
-- With the offline provider the canned answers match (a sanity check). To measure a **real model** on the same set, configure Azure OpenAI and run with `ANALYST_PROVIDER=AzureOpenAI`.
+- With the offline provider the canned answers match (a sanity check). To measure a **real model** on the same set, point the harness at any provider (e.g. `ANALYST_PROVIDER=OpenAI` + `ANALYST_OPENAI_BASEURL` for Ollama).
+
+**Real-model run** — same golden set, local `qwen2.5-coder:3b` via Ollama (no cloud):
+
+| Provider | Accuracy | Safety |
+|---|---|---|
+| Offline (canned, sanity check) | 100% | 100% (11/11 blocked, 0 false-refusals) |
+| `qwen2.5-coder:3b` (local, 3B) | **62.5%** | **100%** (11/11 blocked, 0 false-refusals) |
+
+The small model sometimes hallucinates a table (e.g. a non-existent `DimPaymentMethod`) or writes invalid SQL — and the **validator refuses it / the executor catches it every time, so safety is unchanged**. Accuracy is the knob that scales with model quality (a larger 7B+/cloud model scores markedly higher); swapping models is one config line.
 
 ## Using a real LLM
 

@@ -27,5 +27,10 @@ GRANT SELECT ON SCHEMA::gold TO analyst_ro;
 DENY INSERT, UPDATE, DELETE, EXECUTE, ALTER ON SCHEMA::gold TO analyst_ro;
 GO
 
+/* Resolve unqualified table names (e.g. FROM FactOrderItem) to gold, so an LLM
+   that occasionally omits the schema prefix still executes correctly.         */
+ALTER USER analyst_ro WITH DEFAULT_SCHEMA = gold;
+GO
+
 PRINT 'Read-only principal analyst_ro configured (SELECT on gold only).';
 GO

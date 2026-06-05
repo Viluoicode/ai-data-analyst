@@ -33,6 +33,13 @@ if (provider == LlmProvider.AzureOpenAI)
     options.Azure.DeploymentName = Environment.GetEnvironmentVariable("ANALYST_AZURE_DEPLOYMENT") ?? "";
     options.Azure.ApiKey = Environment.GetEnvironmentVariable("ANALYST_AZURE_KEY") ?? "";
 }
+else if (provider == LlmProvider.OpenAI)
+{
+    // Also covers OpenAI-compatible servers like local Ollama (set ANALYST_OPENAI_BASEURL).
+    options.OpenAI.BaseUrl = Environment.GetEnvironmentVariable("ANALYST_OPENAI_BASEURL") ?? "";
+    options.OpenAI.Model = Environment.GetEnvironmentVariable("ANALYST_OPENAI_MODEL") ?? options.OpenAI.Model;
+    options.OpenAI.ApiKey = Environment.GetEnvironmentVariable("ANALYST_OPENAI_APIKEY") ?? "ollama";
+}
 
 var services = new ServiceCollection();
 services.AddLogging(b => b.AddSimpleConsole().SetMinimumLevel(LogLevel.Warning));
