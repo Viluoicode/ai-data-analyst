@@ -1,5 +1,7 @@
 # AI Data Analyst
 
+[![CI](https://github.com/Viluoicode/ai-data-analyst/actions/workflows/ci.yml/badge.svg)](https://github.com/Viluoicode/ai-data-analyst/actions/workflows/ci.yml)
+
 Turns natural-language business questions (Vietnamese or English) into **safe,
 read-only SQL**, runs them against an analytics database, and returns the result
 rows plus an optional natural-language summary.
@@ -85,7 +87,7 @@ docker compose logs mssql-init      # expect "DB init complete."
 
 # 2. API (offline provider by default — no API keys needed)
 dotnet run --project src/Analyst.Api
-# open http://localhost:5179  (port per launchSettings; or set ASPNETCORE_URLS)
+# open http://localhost:5184  (port per launchSettings; or set ASPNETCORE_URLS)
 
 # 3. Tests and evaluation
 dotnet test tests/Analyst.Tests
@@ -98,7 +100,7 @@ dotnet run --project tests/Analyst.Eval -c Release
 ### Ask a question
 
 ```bash
-curl -s -X POST http://localhost:5179/ask \
+curl -s -X POST http://localhost:5184/ask \
   -H "Content-Type: application/json" \
   -d '{"question":"Revenue by payment method","includeSummary":true}'
 ```
@@ -142,9 +144,12 @@ Safety suite:
 - **Safety** feeds known-malicious SQL through the validator (must block) plus benign SQL (must pass). Any safety regression fails the run (exit code 1) — usable as a CI gate.
 - With the offline provider the canned answers match (a sanity check). To measure a **real model** on the same set, configure Azure OpenAI and run with `ANALYST_PROVIDER=AzureOpenAI`.
 
-## Using a real LLM (Azure OpenAI)
+## Using a real LLM
 
-The provider is just which `IChatClient` is registered. Secrets stay out of source control via user-secrets:
+The provider is just which `IChatClient` is registered — no code change. Secrets stay out of
+source control via user-secrets.
+
+**Azure OpenAI:**
 
 ```bash
 cd src/Analyst.Api
@@ -155,7 +160,19 @@ dotnet user-secrets set "Analyst:Azure:DeploymentName" "<chat-deployment>"
 dotnet user-secrets set "Analyst:Azure:ApiKey" "<key>"
 ```
 
-`OpenAI` and local `Ollama` are also supported by the same abstraction.
+**Local & key-free (Ollama)** — uses Ollama's OpenAI-compatible endpoint, so no cloud account:
+
+```bash
+ollama pull qwen2.5-coder:7b
+cd src/Analyst.Api && dotnet user-secrets init
+dotnet user-secrets set "Analyst:Provider" "OpenAI"
+dotnet user-secrets set "Analyst:OpenAI:BaseUrl" "http://localhost:11434/v1"
+dotnet user-secrets set "Analyst:OpenAI:Model" "qwen2.5-coder:7b"
+dotnet user-secrets set "Analyst:OpenAI:ApiKey" "ollama"
+```
+
+The same env vars (`ANALYST_PROVIDER`, `ANALYST_AZURE_*`) point the evaluation harness at a real
+model so you can measure its accuracy on the golden set.
 
 ## MCP server
 

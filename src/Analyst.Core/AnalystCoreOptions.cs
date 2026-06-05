@@ -19,6 +19,9 @@ public sealed class OpenAIOptions
 {
     public string ApiKey { get; set; } = "";
     public string Model { get; set; } = "gpt-4o-mini";
+
+    /// <summary>OpenAI-compatible base URL. Empty = api.openai.com. For Ollama: http://localhost:11434/v1</summary>
+    public string BaseUrl { get; set; } = "";
 }
 
 public sealed class AnalystCoreOptions

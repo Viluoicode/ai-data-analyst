@@ -1,3 +1,4 @@
+using System.ClientModel;
 using Analyst.Core.Configuration;
 using Analyst.Core.Llm;
 using Analyst.Core.Sql;
@@ -5,6 +6,7 @@ using Azure;
 using Azure.AI.OpenAI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using OpenAI;
 
 namespace Analyst.Core;
 
@@ -43,12 +45,26 @@ public static class ServiceCollectionExtensions
 
         LlmProvider.AzureOpenAI => CreateAzure(options.Azure),
 
-        LlmProvider.OpenAI => new OpenAI.OpenAIClient(Require(options.OpenAI.ApiKey, "OpenAI:ApiKey"))
-            .GetChatClient(options.OpenAI.Model)
-            .AsIChatClient(),
+        LlmProvider.OpenAI => CreateOpenAICompatible(options.OpenAI),
 
         _ => throw new ArgumentOutOfRangeException(nameof(options), options.Provider, "Unknown LLM provider.")
     };
+
+    /// <summary>
+    /// OpenAI or any OpenAI-compatible endpoint. Set OpenAI:BaseUrl to use a local Ollama server
+    /// (http://localhost:11434/v1) or a gateway; leave it empty for api.openai.com.
+    /// </summary>
+    private static IChatClient CreateOpenAICompatible(OpenAIOptions openAI)
+    {
+        var apiKey = Require(openAI.ApiKey, "OpenAI:ApiKey");
+        var clientOptions = new OpenAIClientOptions();
+        if (!string.IsNullOrWhiteSpace(openAI.BaseUrl))
+            clientOptions.Endpoint = new Uri(openAI.BaseUrl);
+
+        return new OpenAIClient(new ApiKeyCredential(apiKey), clientOptions)
+            .GetChatClient(openAI.Model)
+            .AsIChatClient();
+    }
 
     private static IChatClient CreateAzure(AzureOpenAIOptions azure)
     {
